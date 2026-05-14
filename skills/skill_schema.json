@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Skill Definition",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "triggers": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "required_context": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "estimated_token_cost": { "type": "integer" },
+    "activation_command": { "type": "string" },
+    "deactivation_condition": { "type": "string" },
+    "instruction_file": { "type": "string" }
+  },
+  "required": ["name", "description", "triggers", "instruction_file"]
+}

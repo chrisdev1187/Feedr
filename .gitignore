@@ -1,0 +1,33 @@
+# 2026 Vibe Coder Pro v2 - Git Ignore
+# Security First: Never commit API keys
+.env
+.env.txt
+.env.template
+*.env
+.env*
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env/
+
+# Logs and Telemetry
+logs/
+*.log
+telemetry.json
+
+# System / IDE
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Generated Assets
+viral_*.txt
+viral_*.txt
+voiceover.mp3
+generated_app.py

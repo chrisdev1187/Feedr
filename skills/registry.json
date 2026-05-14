@@ -1,0 +1,32 @@
+[
+  {
+    "name": "viral_content",
+    "description": "Generate viral threads and video scripts",
+    "triggers": ["viral", "twitter", "tiktok", "youtube shorts", "thread", "hook"],
+    "required_context": ["platform", "tone"],
+    "estimated_token_cost": 500,
+    "activation_command": "mode=content",
+    "deactivation_condition": "after_execution",
+    "instruction_file": "example_viral_content/SKILL.md"
+  },
+  {
+    "name": "deep_research",
+    "description": "Perform comprehensive web research and comparison",
+    "triggers": ["research", "compare", "analyze", "deep dive", "find info"],
+    "required_context": ["query"],
+    "estimated_token_cost": 2000,
+    "activation_command": "mode=research",
+    "deactivation_condition": "after_execution",
+    "instruction_file": "research_skill.md"
+  },
+  {
+    "name": "repo_researcher",
+    "description": "Analyze and explain code repositories and architectures",
+    "triggers": ["repo", "codebase", "architecture", "folder structure", "how it works", "stack"],
+    "required_context": ["path"],
+    "estimated_token_cost": 1500,
+    "activation_command": "mode=research",
+    "deactivation_condition": "after_execution",
+    "instruction_file": "repo_researcher/SKILL.md"
+  }
+]
