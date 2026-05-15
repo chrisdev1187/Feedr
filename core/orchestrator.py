@@ -50,7 +50,7 @@ def planner_node(state: SpoonFeedrState):
         return {}
 
     if mode == "research":
-        plan = ["research", "summarize"]
+        plan = ["research", "memory_update"]
     elif mode == "app" or mode == "coding_task":
         plan = ["research", "generate", "test", "memory_update"]
     else:
@@ -65,8 +65,9 @@ def researcher_node(state: SpoonFeedrState):
     last_msg = state["messages"][-1].content
 
     results = researcher.research_github(last_msg)
+    new_context = {**state.get("context", {}), "research": f"Found {len(results)} relevant repos on GitHub."}
     return {
-        "context": {"research": f"Found {len(results)} relevant repos on GitHub."},
+        "context": new_context,
         "current_step": state["current_step"] + 1
     }
 
@@ -82,7 +83,8 @@ def executor_node(state: SpoonFeedrState):
         res = ToolDelegator.run_aider(last_msg)
         execution_msg = f"Aider: {res.get('stdout', res.get('error'))}"
 
-    return {"context": {"execution": execution_msg}, "current_step": state["current_step"] + 1}
+    new_context = {**state.get("context", {}), "execution": execution_msg}
+    return {"context": new_context, "current_step": state["current_step"] + 1}
 
 def verifier_node(state: SpoonFeedrState):
     """Verifies the execution results by running tests and Code Rabbit review."""
@@ -95,10 +97,12 @@ def verifier_node(state: SpoonFeedrState):
     findings = rabbit.review_project()
     rabbit_status = f"Code Rabbit found {sum(len(f) for f in findings.values())} potential issues."
 
+    new_context = {
+        **state.get("context", {}),
+        "verification": f"Tests {test_status}. {rabbit_status}"
+    }
     return {
-        "context": {
-            "verification": f"Tests {test_status}. {rabbit_status}"
-        },
+        "context": new_context,
         "current_step": state["current_step"] + 1
     }
 

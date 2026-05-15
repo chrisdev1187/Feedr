@@ -25,13 +25,19 @@ def delegate_to_jules(task: str, repo_path: str = ".") -> dict:
         )
         
         if result.returncode == 0:
-            # Check status
-            status = subprocess.run(
-                ["jules", "remote", "list", "--task"],
-                capture_output=True,
-                text=True
-            )
-            return {"success": True, "session": result.stdout.strip(), "status": status.stdout}
+            # Check status with timeout
+            try:
+                status = subprocess.run(
+                    ["jules", "remote", "list", "--task"],
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+                status_text = status.stdout
+            except subprocess.TimeoutExpired:
+                status_text = "Timeout waiting for Jules task list."
+
+            return {"success": True, "session": result.stdout.strip(), "status": status_text}
         else:
             return {"success": False, "error": result.stderr}
     except Exception as e:

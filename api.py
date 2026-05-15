@@ -6,6 +6,7 @@ Exposes the orchestrator via a REST API and handles proactive background service
 import os
 import json
 import threading
+import uuid
 from typing import List, Optional
 
 from fastapi import FastAPI, BackgroundTasks
@@ -31,15 +32,18 @@ graph = create_spoon_feedr_graph()
 class ChatRequest(BaseModel):
     """Pydantic model for chat requests."""
     message: str
-    session_id: Optional[str] = "default"
+    session_id: Optional[str] = None
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
     """Streams a chat request through the LangGraph orchestrator using a streaming response."""
+    # Generate a unique session ID if none provided
+    session_id = request.session_id or str(uuid.uuid4())
+
     initial_state = {
         "messages": [HumanMessage(content=request.message)],
         "current_step": 0,
-        "session_id": request.session_id
+        "session_id": session_id
     }
 
     async def event_generator():

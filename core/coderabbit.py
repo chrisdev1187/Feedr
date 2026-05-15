@@ -5,6 +5,8 @@ Periodically checks the codebase for issues, bugs, and improvements.
 
 import os
 import json
+import re
+from pathlib import Path
 from vibe_launcher import CloudLLM
 from core.memory import MemoryEngine
 
@@ -19,10 +21,14 @@ class CodeRabbit:
     def review_file(self, filepath):
         """Reviews a specific file for potential issues."""
         if not os.path.exists(filepath):
-            return
+            return []
 
-        with open(filepath, "r") as f:
-            content = f.read()
+        try:
+            with open(filepath, "r") as f:
+                content = f.read()
+        except Exception as e:
+            print(f"Code Rabbit: Failed to read {filepath}: {e}")
+            return []
 
         prompt = f"""You are Code Rabbit, an expert AI code reviewer.
 Review the following code for bugs, security issues, performance bottlenecks, or style improvements.
@@ -35,8 +41,8 @@ CONTENT:
 """
         try:
             resp = self.cloud.chat([{"role": "user", "content": prompt}], temperature=0.2)
-            import re
-            match = re.search(r'\[.*\]', resp, re.DOTALL)
+            # Use non-greedy match to extract JSON list
+            match = re.search(r'\[.*?\]', resp, re.DOTALL)
             if match:
                 findings = json.loads(match.group())
                 for finding in findings:
@@ -58,9 +64,12 @@ CONTENT:
     def review_project(self, root_dir="."):
         """Reviews the entire project by iterating through python files."""
         all_findings = {}
-        for root, _, files in os.walk(root_dir):
-            if "venv" in root or ".git" in root or "db" in root:
+        for root, dirs, files in os.walk(root_dir):
+            # Better directory exclusion using path components
+            parts = Path(root).parts
+            if any(comp in parts for comp in ("venv", ".git", "db")):
                 continue
+
             for file in files:
                 if file.endswith(".py"):
                     path = os.path.join(root, file)

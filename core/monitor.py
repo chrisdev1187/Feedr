@@ -4,6 +4,7 @@ Includes file system watchers and background research loops.
 """
 
 import time
+import os
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -54,24 +55,35 @@ class ProactiveResearcher:
 def babysitter_background_loop(monitor_path=".", interval=300):
     """
     Continuous background loop that runs tests and checks for issues proactively.
-    Now includes Code Rabbit proactive reviews.
+    Now includes Code Rabbit proactive reviews and robust error handling.
     """
     from core.tools import ToolDelegator
     from core.coderabbit import CodeRabbit
     print(f"👶 Baby Sitter monitoring {monitor_path}...")
     rabbit = CodeRabbit()
 
+    # Ensure monitor_path is absolute for consistency
+    monitor_path = os.path.abspath(monitor_path)
+
     while True:
-        # 1. Run tests proactively
-        res = ToolDelegator._run_command(["pytest"])
-        if not res["success"]:
-            print(f"⚠️ Baby Sitter Alert: Tests failing!\n{res.get('stderr', '')}")
+        try:
+            # 1. Run tests proactively in monitor_path
+            res = ToolDelegator._run_command(["pytest"], cwd=monitor_path)
+            if not res["success"]:
+                print(f"⚠️ Baby Sitter Alert: Tests failing in {monitor_path}!\n{res.get('stderr', '')}")
 
-        # 2. Proactive Code Review (Code Rabbit)
-        print("🐰 Code Rabbit starting proactive review...")
-        rabbit.review_project(monitor_path)
+            # 2. Proactive Code Review (Code Rabbit)
+            print("🐰 Code Rabbit starting proactive review...")
+            rabbit.review_project(monitor_path)
 
-        # 3. Check git status
-        git_res = ToolDelegator.run_gh(["status"])
+            # 3. Check git status in monitor_path
+            git_res = ToolDelegator.run_gh(["status"], cwd=monitor_path)
+            if git_res["success"]:
+                print(f"📄 Git Status in {monitor_path}:\n{git_res['stdout']}")
+            else:
+                print(f"❌ Git Status failed in {monitor_path}: {git_res.get('stderr', git_res.get('error'))}")
+
+        except Exception as e:
+            print(f"🚨 Baby Sitter loop error: {e}")
 
         time.sleep(interval)

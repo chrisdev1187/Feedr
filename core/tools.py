@@ -30,10 +30,10 @@ class ToolDelegator:
         return ToolDelegator._run_command(cmd)
 
     @staticmethod
-    def run_gh(args):
+    def run_gh(args, cwd=None):
         """Runs the GitHub CLI with the provided arguments."""
         cmd = ["gh"] + args
-        return ToolDelegator._run_command(cmd)
+        return ToolDelegator._run_command(cmd, cwd=cwd)
 
     @staticmethod
     def run_ollama(prompt, model="llama3.2"):
@@ -42,7 +42,7 @@ class ToolDelegator:
         return ToolDelegator._run_command(cmd)
 
     @staticmethod
-    def _run_command(cmd_list):
+    def _run_command(cmd_list, cwd=None):
         """Internal helper to run shell commands with cross-platform support."""
         if sys.platform == "win32":
             executable = shutil.which(cmd_list[0])
@@ -50,7 +50,7 @@ class ToolDelegator:
                 cmd_list[0] = cmd_list[0] + ".cmd"
 
         try:
-            result = subprocess.run(cmd_list, capture_output=True, text=True, check=False)
+            result = subprocess.run(cmd_list, capture_output=True, text=True, check=False, cwd=cwd)
             return {
                 "success": result.returncode == 0,
                 "stdout": result.stdout,
