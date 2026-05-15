@@ -3,6 +3,7 @@ NVIDIA NIM Provider — 136 free models, one API key
 Get key: https://build.nvidia.com/settings/api-keys
 """
 
+import os
 from openai import OpenAI
 
 NVIDIA_BASE = "https://integrate.api.nvidia.com/v1"
@@ -14,14 +15,24 @@ NVIDIA_MODELS = {
 }
 
 def nvidia_chat(prompt: str, model_key: str = "fast_code") -> str:
-    """Call NVIDIA NIM with automatic model selection"""
+    """
+    Call NVIDIA NIM with automatic model selection.
+    Requires NVIDIA_API_KEY environment variable.
+    """
+    api_key = os.getenv("NVIDIA_API_KEY")
+    if not api_key:
+        return "Error: NVIDIA_API_KEY not found in environment."
+
     client = OpenAI(
         base_url=NVIDIA_BASE,
-        api_key=os.getenv("NVIDIA_API_KEY")  # Get from build.nvidia.com
+        api_key=api_key
     )
-    response = client.chat.completions.create(
-        model=NVIDIA_MODELS[model_key],
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=2000
-    )
-    return response.choices[0].message.content
+    try:
+        response = client.chat.completions.create(
+            model=NVIDIA_MODELS.get(model_key, NVIDIA_MODELS["fast_code"]),
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=2000
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error calling NVIDIA NIM: {e}"

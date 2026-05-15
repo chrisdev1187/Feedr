@@ -5,13 +5,16 @@ Docs: https://jules.google
 """
 
 import subprocess
-import json
+import shutil
 
 def delegate_to_jules(task: str, repo_path: str = ".") -> dict:
     """
     Send a coding task to Jules for autonomous execution.
     Jules spins up a VM, does the work, and opens a PR.
     """
+    if not shutil.which("jules"):
+        return {"success": False, "error": "jules-cli not found. Install with 'npm install -g @google/jules'"}
+
     try:
         # Create a remote session for Jules to work on
         result = subprocess.run(
@@ -28,7 +31,7 @@ def delegate_to_jules(task: str, repo_path: str = ".") -> dict:
                 capture_output=True,
                 text=True
             )
-            return {"success": True, "session": result.stdout, "status": status.stdout}
+            return {"success": True, "session": result.stdout.strip(), "status": status.stdout}
         else:
             return {"success": False, "error": result.stderr}
     except Exception as e:
