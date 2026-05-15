@@ -11,6 +11,7 @@ from typing import List, Optional
 
 from fastapi import FastAPI, BackgroundTasks
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage
 
@@ -18,6 +19,9 @@ from core.orchestrator import create_spoon_feedr_graph
 from core.monitor import babysitter_background_loop
 
 app = FastAPI(title="Spoon Feedr API")
+
+# Serve static files for the Zhipu-style UI
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.on_event("startup")
 async def startup_event():

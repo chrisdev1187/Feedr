@@ -87,19 +87,30 @@ def executor_node(state: SpoonFeedrState):
     return {"context": new_context, "current_step": state["current_step"] + 1}
 
 def verifier_node(state: SpoonFeedrState):
-    """Verifies the execution results by running tests and Code Rabbit review."""
+    """Verifies execution results by running tests, Code Rabbit review, and visual verification."""
     # 1. Proactively run tests
     res = ToolDelegator._run_command(["pytest"])
     test_status = "Passed" if res["success"] else "Failed"
 
-    # 2. Run Code Rabbit review on changed files (placeholder: review all)
+    # 2. Run Code Rabbit review
     rabbit = CodeRabbit()
     findings = rabbit.review_project()
     rabbit_status = f"Code Rabbit found {sum(len(f) for f in findings.values())} potential issues."
 
+    # 3. Visual Verification using token-efficient Playwright CLI (if web app)
+    intent = state.get("intent", {})
+    visual_status = ""
+    if intent.get("platform") == "web":
+        # Start the app if it's not running (placeholder logic)
+        # playwright-cli screenshot --filename verification.png
+        res_browser = ToolDelegator.run_browser(["open", "http://localhost:8000/health"])
+        if res_browser["success"]:
+            ToolDelegator.run_browser(["screenshot", "--filename", "verification.png"])
+            visual_status = "Visual snapshot captured for review."
+
     new_context = {
         **state.get("context", {}),
-        "verification": f"Tests {test_status}. {rabbit_status}"
+        "verification": f"Tests {test_status}. {rabbit_status} {visual_status}"
     }
     return {
         "context": new_context,
