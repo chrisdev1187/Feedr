@@ -1,0 +1,14 @@
+langgraph
+langchain_openai
+langchain_community
+langchain_ollama
+chromadb
+watchdog
+textual
+fastapi
+uvicorn
+python-dotenv
+openai
+google-generativeai
+groq
+ollama

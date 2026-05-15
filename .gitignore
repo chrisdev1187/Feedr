@@ -31,3 +31,5 @@ viral_*.txt
 viral_*.txt
 voiceover.mp3
 generated_app.py
+db/
+.env
