@@ -51,22 +51,27 @@ class ProactiveResearcher:
             return repos
         return []
 
-def babysitter_background_loop(monitor_path=".", interval=60):
+def babysitter_background_loop(monitor_path=".", interval=300):
     """
     Continuous background loop that runs tests and checks for issues proactively.
-    Meant to be run in a separate thread or process.
+    Now includes Code Rabbit proactive reviews.
     """
     from core.tools import ToolDelegator
+    from core.coderabbit import CodeRabbit
     print(f"👶 Baby Sitter monitoring {monitor_path}...")
+    rabbit = CodeRabbit()
 
     while True:
         # 1. Run tests proactively
         res = ToolDelegator._run_command(["pytest"])
         if not res["success"]:
             print(f"⚠️ Baby Sitter Alert: Tests failing!\n{res.get('stderr', '')}")
-            # Here we could trigger a notification or an auto-fix session
 
-        # 2. Check git status for uncommitted changes
+        # 2. Proactive Code Review (Code Rabbit)
+        print("🐰 Code Rabbit starting proactive review...")
+        rabbit.review_project(monitor_path)
+
+        # 3. Check git status
         git_res = ToolDelegator.run_gh(["status"])
 
         time.sleep(interval)

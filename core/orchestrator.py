@@ -22,6 +22,7 @@ except ImportError:
 from core.memory import MemoryEngine, memory_agent_node
 from core.monitor import ProactiveResearcher
 from core.tools import ToolDelegator
+from core.coderabbit import CodeRabbit
 
 class SpoonFeedrState(TypedDict):
     """The state of the Spoon Feedr orchestrator."""
@@ -84,12 +85,20 @@ def executor_node(state: SpoonFeedrState):
     return {"context": {"execution": execution_msg}, "current_step": state["current_step"] + 1}
 
 def verifier_node(state: SpoonFeedrState):
-    """Verifies the execution results by running tests."""
-    # Proactively run tests
+    """Verifies the execution results by running tests and Code Rabbit review."""
+    # 1. Proactively run tests
     res = ToolDelegator._run_command(["pytest"])
-    status = "Passed" if res["success"] else "Failed"
+    test_status = "Passed" if res["success"] else "Failed"
+
+    # 2. Run Code Rabbit review on changed files (placeholder: review all)
+    rabbit = CodeRabbit()
+    findings = rabbit.review_project()
+    rabbit_status = f"Code Rabbit found {sum(len(f) for f in findings.values())} potential issues."
+
     return {
-        "context": {"verification": f"Tests {status}.\n{res.get('stdout', res.get('stderr'))}"},
+        "context": {
+            "verification": f"Tests {test_status}. {rabbit_status}"
+        },
         "current_step": state["current_step"] + 1
     }
 
