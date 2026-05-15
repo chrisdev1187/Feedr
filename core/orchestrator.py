@@ -1,3 +1,8 @@
+"""
+Core orchestration logic for Spoon Feedr using LangGraph.
+Handles intent parsing, planning, research, execution, and verification.
+"""
+
 from typing import Annotated, List, Union, Dict, Any
 from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, END
@@ -19,6 +24,7 @@ from core.monitor import ProactiveResearcher
 from core.tools import ToolDelegator
 
 class SpoonFeedrState(TypedDict):
+    """The state of the Spoon Feedr orchestrator."""
     messages: Annotated[List[BaseMessage], add_messages]
     intent: Dict[str, Any]
     plan: List[str]
@@ -28,11 +34,13 @@ class SpoonFeedrState(TypedDict):
     next_action: str
 
 def intent_parser_node(state: SpoonFeedrState):
+    """Parses the user's intent from the last message."""
     user_msg = state["messages"][-1].content
     intent = original_parse_intent(user_msg)
     return {"intent": intent}
 
 def planner_node(state: SpoonFeedrState):
+    """Creates a spoon-feeding plan based on the parsed intent."""
     intent = state.get("intent", {})
     mode = intent.get("mode", "app")
 
@@ -50,6 +58,7 @@ def planner_node(state: SpoonFeedrState):
     return {"plan": plan, "current_step": 0}
 
 def researcher_node(state: SpoonFeedrState):
+    """Performs GitHub research to find relevant patterns or tools."""
     engine = MemoryEngine()
     researcher = ProactiveResearcher(engine)
     last_msg = state["messages"][-1].content
@@ -61,6 +70,7 @@ def researcher_node(state: SpoonFeedrState):
     }
 
 def executor_node(state: SpoonFeedrState):
+    """Delegates the core task to specialized CLI tools like Aider or Jules."""
     intent = state.get("intent", {})
     last_msg = state["messages"][-1].content
 
@@ -74,6 +84,7 @@ def executor_node(state: SpoonFeedrState):
     return {"context": {"execution": execution_msg}, "current_step": state["current_step"] + 1}
 
 def verifier_node(state: SpoonFeedrState):
+    """Verifies the execution results by running tests."""
     # Proactively run tests
     res = ToolDelegator._run_command(["pytest"])
     status = "Passed" if res["success"] else "Failed"
@@ -82,7 +93,12 @@ def verifier_node(state: SpoonFeedrState):
         "current_step": state["current_step"] + 1
     }
 
+def memory_agent_wrap_node(state: SpoonFeedrState):
+    """Wrapper for the memory agent to persist project knowledge."""
+    return memory_agent_node(state)
+
 def router(state: SpoonFeedrState):
+    """Decides the next node to execute based on the plan and current step."""
     plan = state.get("plan", [])
     step_idx = state.get("current_step", 0)
 
@@ -99,6 +115,7 @@ def router(state: SpoonFeedrState):
     return END
 
 def create_spoon_feedr_graph():
+    """Compiles the Spoon Feedr LangGraph workflow."""
     workflow = StateGraph(SpoonFeedrState)
 
     workflow.add_node("intent_parser", intent_parser_node)
@@ -106,7 +123,7 @@ def create_spoon_feedr_graph():
     workflow.add_node("researcher", researcher_node)
     workflow.add_node("executor", executor_node)
     workflow.add_node("verifier", verifier_node)
-    workflow.add_node("memory_agent", memory_agent_node)
+    workflow.add_node("memory_agent", memory_agent_wrap_node)
 
     workflow.set_entry_point("intent_parser")
     workflow.add_edge("intent_parser", "planner")

@@ -1,10 +1,18 @@
+"""
+Tool delegation layer for Spoon Feedr.
+Wraps specialized CLI tools like Aider, Jules, and gh.
+"""
+
 import subprocess
 import sys
 import shutil
 
 class ToolDelegator:
+    """Delegator class to handle execution of external CLI agents and tools."""
+
     @staticmethod
     def run_aider(message, auto_test=True, model=None):
+        """Runs Aider for git-native code editing and test loops."""
         cmd = ["aider", "--message", message]
         if auto_test:
             cmd.append("--auto-test")
@@ -16,23 +24,26 @@ class ToolDelegator:
 
     @staticmethod
     def run_jules(task, repo_path="."):
+        """Runs Google Jules for asynchronous cloud-based coding tasks."""
         # Improved Jules delegation with repo awareness
         cmd = ["jules", "remote", "new", "--repo", repo_path, "--session", task]
         return ToolDelegator._run_command(cmd)
 
     @staticmethod
     def run_gh(args):
+        """Runs the GitHub CLI with the provided arguments."""
         cmd = ["gh"] + args
         return ToolDelegator._run_command(cmd)
 
     @staticmethod
     def run_ollama(prompt, model="llama3.2"):
-        # Direct Ollama CLI wrapper if python library is not preferred for some reason
+        """Directly runs Ollama CLI for local model inference."""
         cmd = ["ollama", "run", model, prompt]
         return ToolDelegator._run_command(cmd)
 
     @staticmethod
     def _run_command(cmd_list):
+        """Internal helper to run shell commands with cross-platform support."""
         if sys.platform == "win32":
             executable = shutil.which(cmd_list[0])
             if not executable and shutil.which(cmd_list[0] + ".cmd"):

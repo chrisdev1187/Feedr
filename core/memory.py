@@ -1,3 +1,8 @@
+"""
+Memory engine for Spoon Feedr, combining SQLite and ChromaDB.
+Handles structured facts and vector-based semantic search.
+"""
+
 import sqlite3
 import chromadb
 from chromadb.config import Settings
@@ -5,14 +10,20 @@ import json
 import os
 
 class MemoryEngine:
+    """Hybrid memory storage for agent-managed project context."""
+
     def __init__(self, db_path="db/spoon_feedr.db", chroma_path="db/chroma"):
+        """Initializes the SQLite and ChromaDB clients."""
         self.db_path = db_path
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
         self.chroma_client = chromadb.PersistentClient(path=chroma_path)
         self.init_sqlite()
         # Using a collection for project-specific knowledge
         self.collection = self.chroma_client.get_or_create_collection(name="project_memory")
 
     def init_sqlite(self):
+        """Creates the necessary tables in SQLite for facts and interactions."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("""
@@ -36,6 +47,7 @@ class MemoryEngine:
         conn.close()
 
     def store_fact(self, key, value, category="general"):
+        """Stores or updates a structured fact in SQLite."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("""
@@ -46,6 +58,7 @@ class MemoryEngine:
         conn.close()
 
     def get_fact(self, key):
+        """Retrieves a fact from SQLite by its key."""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("SELECT value FROM facts WHERE key = ?", (key,))
@@ -54,6 +67,7 @@ class MemoryEngine:
         return json.loads(row[0]) if row else None
 
     def add_to_vector_memory(self, text, metadata=None, ids=None):
+        """Adds a document to the ChromaDB vector memory."""
         self.collection.add(
             documents=[text],
             metadatas=[metadata] if metadata else None,
@@ -61,6 +75,7 @@ class MemoryEngine:
         )
 
     def query_vector_memory(self, query_text, n_results=5):
+        """Queries the vector memory for relevant context."""
         return self.collection.query(
             query_texts=[query_text],
             n_results=n_results
@@ -69,6 +84,7 @@ class MemoryEngine:
 def memory_agent_node(state):
     """
     Extracts facts from the last interaction and persists them.
+    Used as a node in the LangGraph workflow.
     """
     # Increment current_step to avoid infinite loops in the orchestrator
     state_update = {"current_step": state["current_step"] + 1}

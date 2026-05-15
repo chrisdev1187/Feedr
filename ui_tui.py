@@ -1,8 +1,15 @@
+"""
+High-end TUI for Spoon Feedr using the Textual library.
+Provides a local dashboard for chat, telemetry, and memory.
+"""
+
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Static, Input, Log
 from textual.containers import Container, Horizontal, Vertical
 
 class SpoonFeedrTUI(App):
+    """The main Textual application for Spoon Feedr."""
+
     CSS = """
     Screen {
         layout: vertical;
@@ -35,6 +42,7 @@ class SpoonFeedrTUI(App):
     """
 
     def compose(self) -> ComposeResult:
+        """Composes the TUI layout with sidebar and main chat area."""
         yield Header()
         with Container(id="main_container"):
             with Vertical(id="sidebar"):
@@ -48,12 +56,14 @@ class SpoonFeedrTUI(App):
         yield Footer()
 
     def on_mount(self) -> None:
+        """Initializes the orchestrator graph when the app starts."""
         self.query_one("#telemetry_log").write_line("👶 Baby Sitter active.")
         self.query_one("#memory_log").write_line("🧠 Project context loaded.")
         from core.orchestrator import create_spoon_feedr_graph
         self.graph = create_spoon_feedr_graph()
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handles user input by streaming it through the LangGraph orchestrator."""
         user_text = event.value
         self.query_one("#chat_log").write_line(f"User: {user_text}")
         event.input.value = ""
